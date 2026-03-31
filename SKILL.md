@@ -44,6 +44,7 @@ If you catch yourself thinking any of these, STOP and check modes:
 
 | Mode | Trigger | Reference |
 |------|---------|-----------|
+| **setup** | First-time config, "setup", "configure", or missing `providers.json` | `references/modes/setup.md` |
 | **brainstorming** | Any new feature, design, or creative work | `references/modes/brainstorming.md` |
 | **writing-plans** | Spec approved, ready to plan implementation | `references/modes/writing-plans.md` |
 | **executing-plans** | Have a plan, executing without MCO | `references/modes/executing-plans.md` |
@@ -152,18 +153,26 @@ When executing a plan, always:
 
 ---
 
-## Subagent Dispatch (via MCO)
+## MCO Provider Configuration
 
-OpenClaw uses MCO (`mco run`) for all coding execution. Provider rotation ensures independence:
+**Provider 列表在 `providers.json` 中配置，修改该文件即可，无需改动 SKILL.md。**
 
-| Stage | Provider | Command |
-|-------|----------|---------|
-| Implementation | `claude` | `mco run --repo {W} --providers claude --json` |
-| Spec Review | `codex` | `mco run --repo {W} --providers codex --json` |
-| Quality Review | `opencode` | `mco run --repo {W} --providers opencode --json` |
-| Parallel Dispatch | `claude`/`codex`/`opencode` | `mco run × N & wait` |
+Config file location: `~/.openclaw/skills/superpowers/providers.json`
+
+If the file does not exist, activate `setup` mode before proceeding.
+
+**Current provider assignments** (read from `providers.json`):
+
+| Stage | Provider | MCO Command |
+|-------|----------|------------|
+| Implementation | `{implementation}` | `mco run --repo {W} --providers {implementation} --json` |
+| Spec Review | `{specReview}` | `mco run --repo {W} --providers {specReview} --json` |
+| Quality Review | `{qualityReview}` | `mco run --repo {W} --providers {qualityReview} --json` |
+| Parallel Dispatch | `{parallelProviders[]}` | `mco run × N & wait` |
 
 `sessions_send` is used for human-in-the-loop coordination and broadcast notifications.
+
+**To reconfigure**: say "setup" or "configure MCO providers" to re-enter the setup flow.
 
 ---
 

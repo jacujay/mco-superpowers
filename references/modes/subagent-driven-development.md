@@ -12,12 +12,15 @@ Each task uses `mco run` with a single provider for focused execution. The coord
 
 **Provider rotation strategy** (avoids the same agent reviewing its own work):
 
-| Stage | Provider | Reason |
-|-------|----------|--------|
-| Implementation | `claude` | Strongest implementation capability |
-| Spec Review | `codex` | Independent from implementer |
-| Quality Review | `opencode` | Independent from first two stages |
-| Final Code Review | `claude` | Global perspective, summary judgment |
+> **Note:** Providers are loaded from `~/.openclaw/skills/superpowers/providers.json` at startup. If the file does not exist, activate `setup` mode first.
+
+| Stage | Config Key | Reason |
+|-------|------------|--------|
+| Implementation | `implementation` | Strongest implementation capability |
+| Spec Review | `specReview` | Independent from implementer |
+| Quality Review | `qualityReview` | Independent from first two stages |
+| Final Code Review | `implementation` | Global perspective, summary judgment |
+| Parallel Dispatch | `parallelProviders[]` | Round-robin across listed providers |
 
 ## Prerequisites
 
@@ -26,6 +29,7 @@ Each task uses `mco run` with a single provider for focused execution. The coord
 - [ ] Git worktree is set up (use git-worktrees mode)
 - [ ] Tracker file created at `docs/superpowers/tracker.md`
 - [ ] `mco` is installed and configured (`mco doctor` passes)
+- [ ] `providers.json` exists (or run `setup` mode first)
 
 ## Execution Modes
 
@@ -55,14 +59,19 @@ For each task in the plan:
 
 Update tracker: 🔄 in progress
 
-Dispatch via MCO:
+Dispatch via MCO (providers read from `providers.json`):
 
 ```bash
+# Load providers.json first:
+#   implementation = $.implementation
+#   specReview = $.specReview
+#   qualityReview = $.qualityReview
+
 mco run \
   --repo {WORKTREE_PATH} \
   --prompt "[Paste implementer prompt from references/prompts/implementer-prompt.md
    with TASK_DESCRIPTION, PLAN_SECTION, and SPEC_SECTION filled in]" \
-  --providers claude \
+  --providers {implementation} \
   --json
 ```
 
@@ -81,7 +90,7 @@ mco run \
   --repo {WORKTREE_PATH} \
   --prompt "[Paste spec reviewer prompt from references/prompts/spec-reviewer-prompt.md
    with IMPLEMENTER_REPORT, TASK_REQUIREMENTS, and FILE_LIST filled in]" \
-  --providers codex \
+  --providers {specReview} \
   --json
 ```
 
@@ -91,11 +100,11 @@ sessions_send to:reviewer message:"Spec compliance review for Task N: [details]"
 ```
 
 **If issues found:**
-1. Send issues back for fixes (re-dispatch with `opencode`):
+1. Send issues back for fixes (re-dispatch with `qualityReview` provider):
    ```bash
-   mco run --repo {WORKTREE_PATH} --prompt "[Fix the following issues: ...]" --providers opencode --json
+   mco run --repo {WORKTREE_PATH} --prompt "[Fix the following issues: ...]" --providers {qualityReview} --json
    ```
-2. Re-review after fixes (dispatch spec reviewer again with `codex`)
+2. Re-review after fixes (dispatch spec reviewer again with `{specReview}`)
 3. Max 3 iterations
 
 **Do NOT proceed to quality review until spec compliance passes.**
@@ -109,17 +118,17 @@ mco run \
   --repo {WORKTREE_PATH} \
   --prompt "[Paste code quality reviewer prompt from references/prompts/code-quality-reviewer-prompt.md
    with IMPLEMENTER_REPORT, TASK_DESCRIPTION, BASE_SHA, and HEAD_SHA filled in]" \
-  --providers opencode \
+  --providers {qualityReview} \
   --chain \
   --json
 ```
 
 **If Critical or Important issues found:**
-1. Send back for fixes (re-dispatch with `claude`):
+1. Send back for fixes (re-dispatch with `implementation` provider):
    ```bash
-   mco run --repo {WORKTREE_PATH} --prompt "[Address quality issues: ...]" --providers claude --json
+   mco run --repo {WORKTREE_PATH} --prompt "[Address quality issues: ...]" --providers {implementation} --json
    ```
-2. Re-review after fixes (dispatch quality reviewer again with `opencode`)
+2. Re-review after fixes (dispatch quality reviewer again with `{qualityReview}`)
 3. Max 3 iterations
 
 ### 4. Task Completion

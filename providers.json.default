@@ -1,0 +1,13 @@
+{
+  "description": "MCO provider 配置。修改此文件即可自定义各 stage 使用的 provider，无需改动 SKILL.md。",
+  "implementation": "claude",
+  "specReview": "codex",
+  "qualityReview": "opencode",
+  "parallelProviders": ["claude", "codex", "opencode"],
+  "notes": {
+    "implementation": "负责实现代码的 provider",
+    "specReview": "负责 spec 合规审查的 provider",
+    "qualityReview": "负责代码质量审查的 provider（仅在 spec 通过后）",
+    "parallelProviders": "并行模式下的 provider 轮换列表"
+  }
+}
